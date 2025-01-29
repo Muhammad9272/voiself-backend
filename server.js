@@ -10,8 +10,21 @@ const fs = require("fs");
 const { writeFileSync, existsSync, mkdirSync } = require("fs");
 const textToSpeech = require('@google-cloud/text-to-speech');
 
-const client = new textToSpeech.TextToSpeechClient();
-
+const client = new textToSpeech.TextToSpeechClient({
+  credentials: {
+    type: "service_account",
+    project_id: process.env.GOOGLE_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Ensure proper format
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    auth_uri: process.env.GOOGLE_AUTH_URI,
+    token_uri: process.env.GOOGLE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT,
+    client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT,
+    universe_domain: process.env.GOOGLE_UNIVERSE_DOMAIN,
+  }
+});
 const aai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 const app = express();
 app.use(cors())
@@ -26,25 +39,6 @@ app.use(
 app.use(express.json());
 
 
-const googleCredentials = {
-  type: "service_account",
-  project_id: process.env.GOOGLE_PROJECT_ID,
-  private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Ensure proper line breaks
-  client_email: process.env.GOOGLE_CLIENT_EMAIL,
-  client_id: process.env.GOOGLE_CLIENT_ID,
-  auth_uri: process.env.GOOGLE_AUTH_URI,
-  token_uri: process.env.GOOGLE_TOKEN_URI,
-  auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT,
-  client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT,
-  universe_domain: process.env.GOOGLE_UNIVERSE_DOMAIN,
-};
-
-// Save it as a temporary file (safe for Vercel)
-const googleCredentialsPath = path.join(__dirname, "/tmp/voiself.json");
-fs.writeFileSync(googleCredentialsPath, JSON.stringify(googleCredentials));
-// Set the environment variable to use the generated file
-process.env.GOOGLE_APPLICATION_CREDENTIALS = googleCredentialsPath;
 
 
 
