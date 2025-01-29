@@ -215,6 +215,7 @@ app.get("/summaryAndSuggestions", async (req, res) => {
 
       Return as JSON:
       {
+        "title": "Brief title capturing the main topic/theme of the dialog",
         "summary": "<conversational summary>",
         "reminderSuggestions": "<friendly question offering to set specific reminders, e.g., 'I noticed a few things you might want reminders for. Would you like me to set reminders for X, Y, or Z?'>"
       }
