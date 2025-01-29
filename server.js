@@ -48,9 +48,6 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS = googleCredentialsPath;
 
 
 
-
-
-
 app.get("/token", async (_req, res) => {
   const token = await aai.realtime.createTemporaryToken({ expires_in: 3600 });
   res.json({ token });
