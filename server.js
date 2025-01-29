@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const { OpenAI } = require('@langchain/openai');
 const { writeFile } = require('node:fs/promises');
 const fs = require("fs");
+const { writeFileSync, existsSync, mkdirSync } = require("fs");
 const textToSpeech = require('@google-cloud/text-to-speech');
 
 const client = new textToSpeech.TextToSpeechClient();
@@ -23,6 +24,32 @@ app.use(
   ),
 );
 app.use(express.json());
+
+
+const googleCredentials = {
+  type: "service_account",
+  project_id: process.env.GOOGLE_PROJECT_ID,
+  private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+  private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"), // Ensure proper line breaks
+  client_email: process.env.GOOGLE_CLIENT_EMAIL,
+  client_id: process.env.GOOGLE_CLIENT_ID,
+  auth_uri: process.env.GOOGLE_AUTH_URI,
+  token_uri: process.env.GOOGLE_TOKEN_URI,
+  auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT,
+  client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT,
+  universe_domain: process.env.GOOGLE_UNIVERSE_DOMAIN,
+};
+
+// Save it as a temporary file (safe for Vercel)
+const googleCredentialsPath = path.join(__dirname, "/tmp/voiself.json");
+fs.writeFileSync(googleCredentialsPath, JSON.stringify(googleCredentials));
+// Set the environment variable to use the generated file
+process.env.GOOGLE_APPLICATION_CREDENTIALS = googleCredentialsPath;
+
+
+
+
+
 
 app.get("/token", async (_req, res) => {
   const token = await aai.realtime.createTemporaryToken({ expires_in: 3600 });
