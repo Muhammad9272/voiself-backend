@@ -147,16 +147,21 @@ app.get('/synthesize', async (req, res) => {
     // Performs the text-to-speech request
     const [response] = await client.synthesizeSpeech(request);
 
-    // Save the generated binary audio content to a local file
-    const filePath = path.join(__dirname, 'output.mp3');
-    await writeFile(filePath, response.audioContent, 'binary');
-
-    console.log(`Audio content written to file: ${filePath}`);
-
-    // Send the file as a response
+     // Send the audio content directly as a response
     res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Disposition', 'attachment; filename="output.mp3"');
-    res.sendFile(filePath);
+    res.setHeader('Content-Disposition', 'inline; filename="output.mp3"');
+    res.send(response.audioContent);
+
+    // Save the generated binary audio content to a local file
+    // const filePath = path.join(__dirname, 'output.mp3');
+    // await writeFile(filePath, response.audioContent, 'binary');
+
+    // console.log(`Audio content written to file: ${filePath}`);
+
+    // // Send the file as a response
+    // res.setHeader('Content-Type', 'audio/mpeg');
+    // res.setHeader('Content-Disposition', 'attachment; filename="output.mp3"');
+    // res.sendFile(filePath);
   } catch (error) {
     console.error('Error during synthesis:', error);
     res.status(500).json({ error: 'An error occurred while synthesizing speech.' });
