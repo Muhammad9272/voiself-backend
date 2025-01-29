@@ -88,10 +88,10 @@ app.get('/chat', async (req, res) => {
     Friend (you): That’s a common fear, but honestly, most people are too focused on their own stuff to judge you. Have you practiced?
     
     Help your friend if they are worried \n\nUser: ${query}\nFriend:`;
-    const response = await model.call(prompt);
+    const rawResponse = await model.call(prompt);
     // Sanitize the response
     let response = sanitizeAIResponse(rawResponse);
-    
+
     res.json({ reply: response.trim() });
   } catch (error) {
     console.error('Error generating response:', error);
