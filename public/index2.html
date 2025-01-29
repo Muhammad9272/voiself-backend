@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Voice AI Chatbot (Professional Interactive Mode)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      margin: 0.5rem;
+      cursor: pointer;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      margin-top: 1rem;
+      resize: none;
+    }
+    .output {
+      background-color: #f4f4f4;
+      padding: 1rem;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Voice AI Chatbot (Interactive Mode)</h1>
+  
+  <!-- Conversation Section -->
+  <div>
+    <h2>Conversation (Continuous Voice Input)</h2>
+    <button id="startConversation">Start Conversation</button>
+    <button id="stopAndSave" disabled>Stop Conversation & Save Summary</button>
+    <textarea id="transcript" placeholder="Conversation transcript appears here..." readonly></textarea>
+  </div>
+
+  <!-- Manual Text Input for Testing -->
+<div>
+  <h2>Test with Text Input</h2>
+  <input
+    id="manualDialogInput"
+    type="text"
+    placeholder="Type a dialog here..."
+    style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;"
+  />
+  <button id="proceedWithText">Proceed with Text</button>
+</div>
+
+  
+  <!-- Summary Output -->
+  <div class="output" id="summaryOutput"></div>
+  
+  <!-- Reminder Output -->
+  <div class="output" id="reminderOutput"></div>
+  
+  <script>
+    // Check if SpeechRecognition is supported
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Please use Chrome or another supported browser.");
+    }
+
+    // Create a continuous recognizer for conversation
+    const conversationRecognizer = new SpeechRecognition();
+    conversationRecognizer.continuous = true;
+    conversationRecognizer.interimResults = false;
+    conversationRecognizer.lang = "en-US";
+
+    // Create a recognizer for reminder commands (non-continuous)
+    const reminderRecognizer = new SpeechRecognition();
+    reminderRecognizer.continuous = false;
+    reminderRecognizer.interimResults = false;
+    reminderRecognizer.lang = "en-US";
+
+    // DOM elements
+    const transcriptArea = document.getElementById("transcript");
+    const summaryOutput = document.getElementById("summaryOutput");
+    const reminderOutput = document.getElementById("reminderOutput");
+    const startConversationBtn = document.getElementById("startConversation");
+    const stopAndSaveBtn = document.getElementById("stopAndSave");
+
+    // State variables
+    let conversationTranscript = "";
+    let conversationContext = ""; // Will hold summary to pass as context for reminders
+
+    // Loader helper: toggles button text and disabled state
+    function setButtonLoading(button, isLoading, originalText) {
+      button.disabled = isLoading;
+      button.textContent = isLoading ? originalText + " (Loading…)" : originalText;
+    }
+
+    // -------------------------
+    // Conversation Handlers
+    // -------------------------
+
+    startConversationBtn.addEventListener("click", () => {
+      try {
+        conversationRecognizer.start();
+        startConversationBtn.disabled = true;
+        stopAndSaveBtn.disabled = false;
+        conversationTranscript = "";
+        transcriptArea.value = "";
+        summaryOutput.textContent = "";
+        reminderOutput.textContent = "";
+      } catch (error) {
+        console.error("Error starting conversation recognizer:", error);
+      }
+    });
+
+    stopAndSaveBtn.addEventListener("click", () => {
+      try {
+        conversationRecognizer.stop();
+        setButtonLoading(stopAndSaveBtn, true, "Stop Conversation & Save Summary");
+      } catch (error) {
+        console.error("Error stopping conversation recognizer:", error);
+      }
+    });
+
+    conversationRecognizer.addEventListener("result", (event) => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      transcript = transcript.trim();
+      if (transcript) {
+        // Append user's transcribed speech
+        conversationTranscript += "User: " + transcript + "\n";
+        transcriptArea.value = conversationTranscript;
+
+        // Immediately send to the chat endpoint (with conversation history)
+        fetch(`/chat?query=${encodeURIComponent(transcript)}&conversation=${encodeURIComponent(conversationTranscript)}`)
+          .then(response => response.json())
+          .then(data => {
+            conversationTranscript += "AI: " + data.reply + "\n";
+            transcriptArea.value = conversationTranscript;
+            // Play AI response via TTS
+            const audio = new Audio(`/synthesize?text=${encodeURIComponent(data.reply)}`);
+            audio.play().catch(err => console.error("Error playing AI audio:", err));
+          })
+          .catch(err => console.error("Error calling chat endpoint:", err));
+      }
+    });
+
+    conversationRecognizer.addEventListener("error", (event) => {
+      console.error("Conversation recognizer error:", event.error);
+    });
+
+    conversationRecognizer.addEventListener("end", () => {
+      if (stopAndSaveBtn.disabled) {
+        // When conversation stops, call the summary endpoint
+        fetch(`/summaryAndSuggestions?dialog=${encodeURIComponent(conversationTranscript)}`)
+          .then(response => response.json())
+          .then(data => {
+            const summaryText = `Summary:\n${data.summary}\n\nReminder Suggestions:\n${data.reminderSuggestions}`;
+            summaryOutput.textContent = summaryText;
+            conversationContext = data.summary; // Save summary as context for reminders
+            // Play summary via TTS
+            const summaryAudio = new Audio(`/synthesize?text=${encodeURIComponent("Let me summarize the conversation: " + data.summary + ". " + data.reminderSuggestions)}`);
+            summaryAudio.play().catch(err => console.error("Error playing summary audio:", err));
+            // When summary playback ends, check for reminder suggestions before starting reminder recognition
+            summaryAudio.addEventListener("ended", () => {
+              if (data.reminderSuggestions && data.reminderSuggestions.trim().length > 0) {
+                console.log("Starting reminder recognition as suggestions are present...");
+                startReminderRecognition();
+              } else {
+                console.log("No reminder suggestions present. Skipping reminder recognition.");
+              }
+            });
+            // // When summary playback ends, automatically start reminder recognition.
+            // summaryAudio.addEventListener("ended", () => {
+            //   startReminderRecognition();
+            // });
+          })
+          .catch(err => {
+            console.error("Error calling summary endpoint:", err);
+            stopAndSaveBtn.disabled = false; // Re-enable in case of error
+          })
+          .finally(() => {
+            setButtonLoading(stopAndSaveBtn, false, "Stop Conversation & Save Summary");
+          });
+      }
+    });
+
+
+
+    // DOM elements for manual text input
+    const manualDialogInput = document.getElementById("manualDialogInput");
+    const proceedWithTextBtn = document.getElementById("proceedWithText");
+
+    // Add click event listener to the "Proceed with Text" button
+    proceedWithTextBtn.addEventListener("click", () => {
+      const dialog = manualDialogInput.value.trim();
+
+      if (!dialog) {
+        alert("Please enter a dialog to proceed.");
+        return;
+      }
+
+      // Disable button while processing
+      setButtonLoading(proceedWithTextBtn, true, "Proceed with Text");
+
+      // Fetch summary and suggestions for the dialog
+      fetch(`/summaryAndSuggestions?dialog=${encodeURIComponent(dialog)}`)
+        .then((response) => response.json())
+        .then((data) => {
+          const summaryText = `Summary:\n${data.summary}\n\nReminder Suggestions:\n${data.reminderSuggestions}`;
+          summaryOutput.textContent = summaryText;
+          conversationContext = data.reminderSuggestions; // Save summary as context for reminders
+          startReminderRecognition();
+        })
+        .catch((err) => {
+          console.error("Error calling summary endpoint:", err);
+          alert("Failed to fetch summary and suggestions. Please try again.");
+        })
+        .finally(() => {
+          setButtonLoading(proceedWithTextBtn, false, "Proceed with Text");
+        });
+    });
+
+    // -------------------------
+    // Reminder Recognition Handlers
+    // -------------------------
+    function startReminderRecognition() {
+      console.log("Starting reminder recognition...");
+      reminderRecognizer.start();
+    }
+
+    reminderRecognizer.addEventListener("result", (event) => {
+      let reminderTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        reminderTranscript += event.results[i][0].transcript;
+      }
+      reminderTranscript = reminderTranscript.trim();
+      if (reminderTranscript) {
+        console.log("Reminder input:", reminderTranscript);
+        processReminder(reminderTranscript);
+      }
+    });
+
+    reminderRecognizer.addEventListener("error", (event) => {
+      console.error("Reminder recognizer error:", event.error);
+    });
+
+    // -------------------------
+    // Process Reminder (calls server endpoint)
+    // -------------------------
+    function processReminder(reminderCommand) {
+      // Send both the reminder command and the conversation context
+      fetch("/processReminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          command: reminderCommand,
+          context: conversationContext
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          reminderOutput.textContent = data.message + "\n" + (data.reminder ? ("Reminder: " + JSON.stringify(data.reminder, null, 2)) : "");
+          const audio = new Audio(`/synthesize?text=${encodeURIComponent(data.message)}`);
+          audio.play().catch(err => console.error("Error playing reminder confirmation audio:", err));
+          audio.addEventListener("ended", () => {
+            if (data.incomplete) {
+              console.log("Reminder details incomplete; restarting reminder recognition.");
+              reminderRecognizer.start();
+            }
+          });
+        })
+        .catch(err => console.error("Error calling processReminder endpoint:", err));
+    }
+  </script>
+</body>
+</html>
