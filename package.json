@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "private": true,
   "scripts": {
-    "serve": "node server.js",
+    "serve": "nodemon server.js",
     "start": "node server.js"
   },
   "dependencies": {
@@ -30,5 +30,8 @@
       "last 1 safari version"
     ]
   },
-  "packageManager": "yarn@4.1.0"
+  "packageManager": "yarn@4.1.0",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
 }

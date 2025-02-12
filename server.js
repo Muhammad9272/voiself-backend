@@ -49,7 +49,7 @@ app.get("/token", async (_req, res) => {
 
 const model = new OpenAI({
   temperature: 0.7, // Adjust for friendly and concise responses
-  modelName: 'gpt-4o', // Use GPT-4
+  modelName: 'gpt-4o', 
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
@@ -68,7 +68,7 @@ const remindersStore = [];
 const remindersFilePath = path.join(__dirname, "reminders.log");
 // Endpoint to handle queries
 app.get('/chat', async (req, res) => {
-  const { query, conversation, userName  } = req.query;
+  const { query, conversation, userName, language } = req.query;
 
   const userNameForPrompt = userName || "friend";
 
@@ -91,7 +91,8 @@ app.get('/chat', async (req, res) => {
       - Detect the language of the conversation based on the provided text. The language could be English, Urdu, Spanish, Arabic, French, or any other language present in the conversation.
       - Start by acknowledging the user’s emotions or concerns.
       - Provide meaningful, actionable advice when applicable.
-      - Keep the response short (50-60 words), conversational, and warm.
+      - **Keep responses concise (20-50 words)**, ensuring a natural and engaging tone.  
+      - Avoid unnecessary elaboration—**match response length to user input** (shorter input = shorter reply).  
       - Avoid repeating the user’s problem—validate their feelings instead.
       - Use simple, natural language and avoid complex or overly formal responses.
       - If clarification is needed, ask for details gently like a caring friend.
@@ -105,6 +106,9 @@ app.get('/chat', async (req, res) => {
 
       **When not to use the user’s name:**
       - Avoid forced or repetitive use. Use it sparingly to maintain authenticity.
+
+       **Language Specific Note:**
+        Make sure the response is given in the language parameter provided, which is ${language}.
 
        There were your previous conversations ${conversation || "<NO CONVERSATION YET>"}. 
 
@@ -171,9 +175,85 @@ app.get('/synthesize', async (req, res) => {
   try {
     const text = req.query.text;
 
+    const languageCode = req.query.language || 'en-US'; // Fallback to 'en-US' if not provided
+    let voiceName = 'en-US-Journey-O'; // Default voice
+
+
     if (!text) {
       return res.status(400).json({ error: 'Text is required as a query parameter.' });
     }
+
+
+    const voiceMappings = {
+      'en-US': 'en-US-Journey-O',
+      'en-GB': 'en-GB-RyanNeural',
+      'es-ES': 'es-ES-AlvaroNeural',
+      'es-MX': 'es-MX-DaliaNeural',
+      'fr-FR': 'fr-FR-DeniseNeural',
+      'de-DE': 'de-DE-KatjaNeural',
+      'it-IT': 'it-IT-DiegoNeural',
+      'ja-JP': 'ja-JP-NanamiNeural',
+      'ko-KR': 'ko-KR-InJoonNeural',
+      'zh-CN': 'zh-CN-YunxiNeural',
+      'zh-TW': 'zh-TW-HsiaoYuNeural',
+      'ru-RU': 'ru-RU-DmitryNeural',
+      'pt-BR': 'pt-BR-FranciscaNeural',
+      'pt-PT': 'pt-PT-DuarteNeural',
+      'ar-SA': 'ar-SA-ZariyahNeural',
+      'hi-IN': 'hi-IN-MadhurNeural',
+      'bn-BD': 'bn-BD-RafiNeural',
+      'pa-IN': 'pa-IN-GurpreetNeural',
+      'jv-ID': 'jv-ID-SitiNeural',
+      'tl-PH': 'tl-PH-AngelNeural',
+      'vi-VN': 'vi-VN-HoaiNeural',
+      'tr-TR': 'tr-TR-AhmetNeural',
+      'ur-PK': 'ur-PK-AsadNeural',
+      'fa-IR': 'fa-IR-ShirinNeural',
+      'pl-PL': 'pl-PL-ZofiaNeural',
+      'uk-UA': 'uk-UA-OleksandrNeural',
+      'ro-RO': 'ro-RO-AndreiNeural',
+      'el-GR': 'el-GR-NefeliNeural',
+      'th-TH': 'th-TH-PremNeural',
+      'he-IL': 'he-IL-AvriNeural',
+      'sv-SE': 'sv-SE-MattiasNeural',
+      'no-NO': 'no-NO-PernilleNeural',
+      'da-DK': 'da-DK-ChristelNeural',
+      'fi-FI': 'fi-FI-NooraNeural',
+      'hu-HU': 'hu-HU-TamasNeural',
+      'cs-CZ': 'cs-CZ-AntoninNeural',
+      'sk-SK': 'sk-SK-LukasNeural',
+      'sl-SI': 'sl-SI-PetraNeural',
+      'hr-HR': 'hr-HR-GabrijelaNeural',
+      'sr-RS': 'sr-RS-BojanNeural',
+      'bs-BA': 'bs-BA-DzenitaNeural',
+      'mk-MK': 'mk-MK-ElenaNeural',
+      'sq-AL': 'sq-AL-AmarildoNeural',
+      'lv-LV': 'lv-LV-EveritaNeural',
+      'lt-LT': 'lt-LT-LeonasNeural',
+      'et-EE': 'et-EE-KaroliinaNeural',
+      'mt-MT': 'mt-MT-SebhastjanNeural',
+      'is-IS': 'is-IS-GunnarNeural',
+      'ga-IE': 'ga-IE-OrlaNeural',
+      'gl-ES': 'gl-ES-XacobeNeural',
+      'ca-ES': 'ca-ES-EnricNeural',
+      'eu-ES': 'eu-ES-InakiNeural',
+      'hy-AM': 'hy-AM-NareNeural',
+      'az-AZ': 'az-AZ-BabekNeural'
+    };
+
+    if (voiceMappings[languageCode]) {
+      voiceName = voiceMappings[languageCode];
+    }
+
+    console.log(voiceName,languageCode);
+
+     // Construct the voice object conditionally
+    const voiceConfig = languageCode === "en-US"
+      ? { name: voiceMappings["en-US"] , languageCode: languageCode} // Only use voiceName if English (US)
+      : { languageCode: languageCode }; // Otherwise, only pass languageCode
+console.log(voiceConfig, languageCode);
+
+
 
     // Construct the request
     const request = {
@@ -188,12 +268,17 @@ app.get('/synthesize', async (req, res) => {
       "input": {
         text
       },
-      "voice": {
-        // "languageCode": "ur-PK",  // Set language to Urdu (Pakistan)
-        // "name": "ur-IN-Wavenet-A"
-        "languageCode": "en-US",
-        "name": "en-US-Journey-O"
-      }
+      "voice": voiceConfig
+      // "voice": {
+      //   // "languageCode": "ur-PK",  // Set language to Urdu (Pakistan)
+      //   // "name": "ur-IN-Wavenet-A"
+      //   // "languageCode": "en-US",
+      //   //"name": "ur-PK-Standard-A",
+
+
+      //   "languageCode": languageCode,
+         
+      // }
     }
 
     // Performs the text-to-speech request
@@ -248,6 +333,7 @@ app.get("/summary", async (req, res) => {
 // -------------------------------------
 app.get("/summaryAndSuggestions", async (req, res) => {
   const dialog = req.query.dialog;
+  const language= req.query.language;
   if (!dialog) {
     console.error("Summary endpoint error: Dialog is missing");
     return res.status(400).json({ error: "Dialog is required" });
@@ -264,6 +350,9 @@ app.get("/summaryAndSuggestions", async (req, res) => {
        - Group related items together (e.g., "shopping for groceries and gifts").
        - Maintain a conversational and helpful tone.
        - If no actionable items are found, skip the reminder suggestions.
+
+    **Language Specific Note:**
+    Make sure the response is given in the language parameter provided, which is ${language}.
     
     **Response Format:** Return your response as a JSON object in the detected language:
     {
@@ -313,7 +402,7 @@ app.get("/summaryAndSuggestions", async (req, res) => {
 
 app.post("/processReminder", async (req, res) => {
   try {
-    const { command, context } = req.body;
+    const { command, context, language } = req.body;
 
     if (!command) {
       console.error("ProcessReminder endpoint error: Command is missing");
@@ -350,7 +439,10 @@ app.post("/processReminder", async (req, res) => {
            - "I noticed you mentioned visiting the bank and shopping at Costco. Should I set reminders for these?"
            - "Great! When should I remind you to visit the bank?"
 
-      6. **Return Output in JSON**:
+      6. **Language Specific Note:**
+       -Make sure the response is given in the language parameter provided, which is ${language}.
+
+      7. **Return Output in JSON**:
          - Provide all reminders in a structured format:
            {
              "reminders": [
