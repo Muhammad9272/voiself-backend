@@ -549,25 +549,34 @@ app.post("/processReminder", async (req, res) => {
 
 
 app.get("/getLocalTime", (req, res) => {
-  try {
-    //const isoLocalTime = new Date().toLocaleString('ur-PK', { timeZoneName: 'short' });
-    // // Get the local time (e.g., "America/New_York" timezone)
-     //const localTime = new Date(new Date().toLocaleString('en-US'));
-
-     //const { command, context, language, timezone = 'UTC' } = req.body;
-    const currentTime = DateTime.now().setZone('UTC');
-    
-    
-    // // Format it to ISO 8601 format without milliseconds
-    //const isoLocalTime = localTime.toISOString().slice(0, 19); // Output: "2025-01-24T10:00:00"
-
-    // Return the formatted local time in JSON response
-    return res.json({ localTime1: currentTime });
-  } catch (error) {
-    console.error("Error fetching local time:", error);
-    res.status(500).json({ error: "Failed to fetch local time." });
-  }
+  return getCurrentLocalTime();
 });
+
+function getCurrentLocalTime() {
+    const now = new Date();
+    
+    // Get local date parts
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');  // Months are 0-based
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    // Get timezone offset in hours and minutes
+    const offset = -now.getTimezoneOffset();
+    const offsetHours = Math.floor(Math.abs(offset) / 60);
+    const offsetMinutes = Math.abs(offset) % 60;
+    const offsetSign = offset >= 0 ? '+' : '-';
+    const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+    
+    // Return ISO 8601 formatted string with local time and offset
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
+}
+
+// Example usage:
+// console.log(getCurrentLocalTime());
+// Output example: "2025-02-13T14:30:45+05:30" (for Indian Standard Time)
 
 
 
