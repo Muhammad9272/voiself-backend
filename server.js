@@ -550,7 +550,7 @@ app.post("/processReminder", async (req, res) => {
 
 app.get("/getLocalTime", (req, res) => {
   try {
-    const isoLocalTime = new Date().toLocaleString('en-US', { timeZoneName: 'short' });
+    const isoLocalTime = new Date().toLocaleString('ur-PK', { timeZoneName: 'short' });
     // // Get the local time (e.g., "America/New_York" timezone)
     // const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
     
