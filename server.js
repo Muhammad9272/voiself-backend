@@ -550,15 +550,19 @@ app.post("/processReminder", async (req, res) => {
 
 app.get("/getLocalTime", (req, res) => {
   try {
-    const isoLocalTime = new Date().toLocaleString('ur-PK', { timeZoneName: 'short' });
+    //const isoLocalTime = new Date().toLocaleString('ur-PK', { timeZoneName: 'short' });
     // // Get the local time (e.g., "America/New_York" timezone)
-    // const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+     //const localTime = new Date(new Date().toLocaleString('en-US'));
+
+     //const { command, context, language, timezone = 'UTC' } = req.body;
+    const currentTime = DateTime.now().setZone('UTC');
+    
     
     // // Format it to ISO 8601 format without milliseconds
-    // const isoLocalTime = localTime.toISOString().slice(0, 19); // Output: "2025-01-24T10:00:00"
+    //const isoLocalTime = localTime.toISOString().slice(0, 19); // Output: "2025-01-24T10:00:00"
 
     // Return the formatted local time in JSON response
-    return res.json({ localTime: isoLocalTime });
+    return res.json({ localTime1: currentTime });
   } catch (error) {
     console.error("Error fetching local time:", error);
     res.status(500).json({ error: "Failed to fetch local time." });
