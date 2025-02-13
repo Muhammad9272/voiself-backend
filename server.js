@@ -9,6 +9,7 @@ const { writeFile } = require('node:fs/promises');
 const fs = require("fs");
 const { writeFileSync, existsSync, mkdirSync } = require("fs");
 const textToSpeech = require('@google-cloud/text-to-speech');
+const { DateTime } = require('luxon');
 
 const client = new textToSpeech.TextToSpeechClient({
   credentials: {
@@ -402,8 +403,11 @@ app.get("/summaryAndSuggestions", async (req, res) => {
 
 app.post("/processReminder", async (req, res) => {
   try {
+   
+    const localTime = new Date().toLocaleString('en-US', { timeZoneName: 'short' });
+    console.log(localTime);
     const { command, context, language } = req.body;
-
+    //return 1;
     if (!command) {
       console.error("ProcessReminder endpoint error: Command is missing");
       return res.status(400).json({ error: "Command is required." });
@@ -412,7 +416,7 @@ app.post("/processReminder", async (req, res) => {
     You are an intelligent and friendly assistant that understands multiple languages. 
       Respond in the same language as the user's input to maintain consistency.
        Your task is to help the user create one or more reminders from their spoken command. Use the conversation context to understand the user’s intent and provide actionable, structured reminders.
-      Current Date and Time: "${new Date().toISOString()}"
+      Current Date and Time: "${localTime}"
       ### Instructions:
       1. **Understand Context**:
          - Use the provided context (if any) to refine your understanding of the user’s intent.
@@ -540,6 +544,24 @@ app.post("/processReminder", async (req, res) => {
   } catch (error) {
     console.error("Error processing reminder command:", error);
     res.status(500).json({ error: "Failed to process reminder command due to server error." });
+  }
+});
+
+
+app.get("/getLocalTime", (req, res) => {
+  try {
+    const isoLocalTime = new Date().toLocaleString('en-US', { timeZoneName: 'short' });
+    // // Get the local time (e.g., "America/New_York" timezone)
+    // const localTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    
+    // // Format it to ISO 8601 format without milliseconds
+    // const isoLocalTime = localTime.toISOString().slice(0, 19); // Output: "2025-01-24T10:00:00"
+
+    // Return the formatted local time in JSON response
+    return res.json({ localTime: isoLocalTime });
+  } catch (error) {
+    console.error("Error fetching local time:", error);
+    res.status(500).json({ error: "Failed to fetch local time." });
   }
 });
 
