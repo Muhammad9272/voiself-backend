@@ -567,22 +567,21 @@ app.post("/processReminder", async (req, res) => {
 
 app.get("/getLocalTime", (req, res) => {
   try {
-    // Get timezone from query parameter
-    const userTimeZone = null ;
-    // If the timezone isn't provided, you could default to the server's local time
-    const timeZone = userTimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const localTime = moment().tz(timeZone).format(); // ISO formatted time in the user's timezone
-
-    return res.json({ 
-      localTime,
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const localDate = new Date();
+    
+    // Get local time string (not UTC)
+    const localTimeISO = localDate.toLocaleString('ur-PK', { timeZone }).replace(', ', 'T');
+    
+    res.json({ 
+      localTime: localTimeISO,
       timeZone
     });
   } catch (error) {
-    console.error("Error fetching time:", error);
+    console.error("Error:", error);
     res.status(500).json({ error: "Failed to fetch time." });
   }
 });
-
 
 
 app.set("port", process.env.PORT || 8000);
