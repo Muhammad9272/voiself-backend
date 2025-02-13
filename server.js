@@ -551,9 +551,11 @@ app.post("/processReminder", async (req, res) => {
 app.get("/getLocalTime", (req, res) => {
   try {
     // Just send UTC time
+    const timeZoneName=Intl.DateTimeFormat().resolvedOptions().timeZone;
     const utcDate = new Date();
     return res.json({ 
-      timestamp11: utcDate.toISOString()
+      timestamp11: utcDate.toISOString(),
+      timeZoneName:timeZoneName
     });
   } catch (error) {
     console.error("Error fetching time11:", error);
