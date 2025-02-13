@@ -567,15 +567,22 @@ app.post("/processReminder", async (req, res) => {
 
 app.get("/getLocalTime", (req, res) => {
   try {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const localDate = new Date();
+
+    const localDate = new Intl.DateTimeFormat('en-US', {
+      timeStyle: 'short',
+      dateStyle: 'short',
+    }).format(new Date());
+
+    // // const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // const localDate = new Date();
+    // console.log(localDate);
     
-    // Get local time string (not UTC)
-    const localTimeISO = localDate.toLocaleString('ur-PK', { timeZone }).replace(', ', 'T');
+    // // Get local time string (not UTC)
+    // //const localTimeISO = localDate.toLocaleString('ur-PK', { timeZone }).replace(', ', 'T');
     
     res.json({ 
-      localTime: localTimeISO,
-      timeZone
+      localTime: localDate,
+      
     });
   } catch (error) {
     console.error("Error:", error);
