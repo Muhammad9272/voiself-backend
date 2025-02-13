@@ -568,6 +568,7 @@ app.post("/processReminder", async (req, res) => {
 app.get("/getLocalTime", (req, res) => {
   try {
 
+const localTime2 = moment().tz("Asia/Karachi").format("YYYY-MM-DDTHH:mm:ss");
     const localDate = new Intl.DateTimeFormat('en-US', {
       timeStyle: 'short',
       dateStyle: 'short',
@@ -582,6 +583,7 @@ app.get("/getLocalTime", (req, res) => {
     
     res.json({ 
       localTime: localDate,
+      localTime1:localTime2
       
     });
   } catch (error) {
