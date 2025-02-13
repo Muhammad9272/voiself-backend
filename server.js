@@ -549,34 +549,19 @@ app.post("/processReminder", async (req, res) => {
 
 
 app.get("/getLocalTime", (req, res) => {
-  return getCurrentLocalTime();
+  try {
+   const dateTimeObject = new Date();
+// console.log("A date-time object is created")
+
+// console.log(`Date: ${dateTimeObject.toDateString()}`);
+// console.log(`Time: ${dateTimeObject.toTimeString()}`);
+
+    return res.json({ localTime1: dateTimeObject.toTimeString() });
+  } catch (error) {
+    console.error("Error fetching local time:", error);
+    res.status(500).json({ error: "Failed to fetch local time." });
+  }
 });
-
-function getCurrentLocalTime() {
-    const now = new Date();
-    
-    // Get local date parts
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');  // Months are 0-based
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    
-    // Get timezone offset in hours and minutes
-    const offset = -now.getTimezoneOffset();
-    const offsetHours = Math.floor(Math.abs(offset) / 60);
-    const offsetMinutes = Math.abs(offset) % 60;
-    const offsetSign = offset >= 0 ? '+' : '-';
-    const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
-    
-    // Return ISO 8601 formatted string with local time and offset
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
-}
-
-// Example usage:
-// console.log(getCurrentLocalTime());
-// Output example: "2025-02-13T14:30:45+05:30" (for Indian Standard Time)
 
 
 
