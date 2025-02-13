@@ -550,16 +550,14 @@ app.post("/processReminder", async (req, res) => {
 
 app.get("/getLocalTime", (req, res) => {
   try {
-   const dateTimeObject = new Date();
-// console.log("A date-time object is created")
-
-// console.log(`Date: ${dateTimeObject.toDateString()}`);
-// console.log(`Time: ${dateTimeObject.toTimeString()}`);
-
-    return res.json({ localTime1: dateTimeObject.toTimeString() });
+    // Just send UTC time
+    const utcDate = new Date();
+    return res.json({ 
+      timestamp11: utcDate.toISOString()
+    });
   } catch (error) {
-    console.error("Error fetching local time:", error);
-    res.status(500).json({ error: "Failed to fetch local time." });
+    console.error("Error fetching time11:", error);
+    res.status(500).json({ error: "Failed to fetch time." });
   }
 });
 
