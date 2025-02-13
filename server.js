@@ -406,10 +406,11 @@ app.get("/summaryAndSuggestions", async (req, res) => {
 app.post("/processReminder", async (req, res) => {
   try {
    
-    const localTime = new Date().toLocaleString('en-US', { timeZoneName: 'short' });
+    const { command, context, language, localTimeZone = "UTC" } = req.body;
+
+      // Get the local time in the user's provided timezone
+    const localTime = moment().tz(localTimeZone).format("YYYY-MM-DDTHH:mm:ss");
     console.log(localTime);
-    const { command, context, language } = req.body;
-    //return 1;
     if (!command) {
       console.error("ProcessReminder endpoint error: Command is missing");
       return res.status(400).json({ error: "Command is required." });
@@ -550,41 +551,13 @@ app.post("/processReminder", async (req, res) => {
 });
 
 
-// app.get("/getLocalTime", (req, res) => {
-//   try {
-//     // Just send UTC time
-//     const timeZoneName=Intl.DateTimeFormat().resolvedOptions().timeZone;
-//     const utcDate = new Date();
-//     return res.json({ 
-//       timestamp11: utcDate.toISOString(),
-//       timeZoneName:timeZoneName
-//     });
-//   } catch (error) {
-//     console.error("Error fetching time11:", error);
-//     res.status(500).json({ error: "Failed to fetch time." });
-//   }
-// });
 
 app.get("/getLocalTime", (req, res) => {
   try {
 
-const localTime2 = moment().tz("Asia/Karachi").format("YYYY-MM-DDTHH:mm:ss");
-    const localDate = new Intl.DateTimeFormat('en-US', {
-      timeStyle: 'short',
-      dateStyle: 'short',
-    }).format(new Date());
-
-    // // const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    // const localDate = new Date();
-    // console.log(localDate);
-    
-    // // Get local time string (not UTC)
-    // //const localTimeISO = localDate.toLocaleString('ur-PK', { timeZone }).replace(', ', 'T');
-    
+    const localTime = moment().tz("Asia/Karachi").format("YYYY-MM-DDTHH:mm:ss");
     res.json({ 
-      localTime: localDate,
-      localTime1:localTime2
-      
+      localTime: localTime,
     });
   } catch (error) {
     console.error("Error:", error);
