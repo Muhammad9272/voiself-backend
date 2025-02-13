@@ -10,6 +10,8 @@ const fs = require("fs");
 const { writeFileSync, existsSync, mkdirSync } = require("fs");
 const textToSpeech = require('@google-cloud/text-to-speech');
 const { DateTime } = require('luxon');
+const moment = require('moment-timezone');
+
 
 const client = new textToSpeech.TextToSpeechClient({
   credentials: {
@@ -548,21 +550,38 @@ app.post("/processReminder", async (req, res) => {
 });
 
 
+// app.get("/getLocalTime", (req, res) => {
+//   try {
+//     // Just send UTC time
+//     const timeZoneName=Intl.DateTimeFormat().resolvedOptions().timeZone;
+//     const utcDate = new Date();
+//     return res.json({ 
+//       timestamp11: utcDate.toISOString(),
+//       timeZoneName:timeZoneName
+//     });
+//   } catch (error) {
+//     console.error("Error fetching time11:", error);
+//     res.status(500).json({ error: "Failed to fetch time." });
+//   }
+// });
+
 app.get("/getLocalTime", (req, res) => {
   try {
-    // Just send UTC time
-    const timeZoneName=Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const utcDate = new Date();
+    // Get timezone from query parameter
+    const userTimeZone = null ;
+    // If the timezone isn't provided, you could default to the server's local time
+    const timeZone = userTimeZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const localTime = moment().tz(timeZone).format(); // ISO formatted time in the user's timezone
+
     return res.json({ 
-      timestamp11: utcDate.toISOString(),
-      timeZoneName:timeZoneName
+      localTime,
+      timeZone
     });
   } catch (error) {
-    console.error("Error fetching time11:", error);
+    console.error("Error fetching time:", error);
     res.status(500).json({ error: "Failed to fetch time." });
   }
 });
-
 
 
 
